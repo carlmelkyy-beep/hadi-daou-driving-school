@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: white;
+      border-radius: 20px;
+      padding: 30px 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+
+    .lang-select {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      font-size: 14px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .progress,
+    .score-box {
+      font-size: 16px;
+      font-weight: bold;
+      color: #1e293b;
+    }
+
+    .question-box {
+      margin-top: 20px;
+    }
+
+    .question-image {
+      width: 100%;
+      max-width: 320px;
+      height: 220px;
+      object-fit: contain;
+      display: none;
+      margin: 0 auto 20px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 10px;
+    }
+
+    .question-title {
+      font-size: 24px;
+      color: #0f172a;
+      margin-bottom: 20px;
+      line-height: 1.6;
+      text-align: left;
+    }
+
+    .answers {
+      display: grid;
+      gap: 12px;
+    }
+
+    .answer-btn {
+      width: 100%;
+      border: 2px solid #cbd5e1;
+      background: #f8fafc;
+      color: #0f172a;
+      padding: 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: left;
+      transition: 0.3s;
+    }
+
+    .answer-btn:hover {
+      background: #e2e8f0;
+    }
+
+    .answer-btn.correct {
+      background: #16a34a;
+      color: white;
+      border-color: #16a34a;
+    }
+
+    .answer-btn.wrong {
+      background: #dc2626;
+      color: white;
+      border-color: #dc2626;
+    }
+
+    .answer-btn.selected {
+      border-color: #1d4ed8;
+      background: #dbeafe;
+      color: #0f172a;
+    }
+
+    .answer-btn.disabled {
+      pointer-events: none;
+      opacity: 0.95;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      min-height: 24px;
+      text-align: left;
+    }
+
+    .controls {
+      margin-top: 25px;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .control-btn {
+      flex: 1;
+      min-width: 160px;
+      border: none;
+      padding: 15px;
+      font-size: 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    .check-btn {
+      background: red;
+      color: white;
+    }
+
+    .check-btn:hover {
+      background: rgb(232, 111, 111);
+    }
+
+    .next-btn {
+      background: #1d4ed8;
+      color: white;
+    }
+
+    .next-btn:hover {
+      background: #2563eb;
+    }
+
+    .next-btn:disabled,
+    .check-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 18px;
+      color: #1d4ed8;
+      text-decoration: none;
+      font-weight: bold;
+      text-align: left;
+    }
+
+    .result-box {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .result-title {
+      font-size: 30px;
+      margin-bottom: 15px;
+      color: #0f172a;
+    }
+
+    .result-score {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #1e293b;
+      font-weight: bold;
+    }
+
+    .restart-btn {
+      border: none;
+      padding: 15px 22px;
+      font-size: 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      background: red;
+      color: white;
+    }
+
+    .restart-btn:hover {
+      background: rgb(232, 111, 111);
+    }
+
+    @media (max-width: 600px) {
+      .question-title {
+        font-size: 20px;
+      }
+
+      .answer-btn {
+        font-size: 15px;
+      }
+
+      .control-btn {
+        width: 100%;
+      }
+
+      .controls {
+        flex-direction: column;
+      }
+
+      .top-bar {
+        justify-content: center;
+      }
+
+      .question-image {
+        height: 180px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <div class="top-bar">
+      <select class="lang-select" id="languageSwitcher">
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="ar">العربية</option>
+      </select>
+    </div>
+
+    <div class="top-row">
+      <div class="progress" id="progressText">Question 1 / 1</div>
+      <div class="score-box" id="scoreText">Score: 0</div>
+    </div>
+
+    <div class="question-box">
+      <img id="questionImage" class="question-image" src="" alt="Question image">
+      <h2 class="question-title" id="questionText"></h2>
+      <div class="answers" id="answersContainer"></div>
+      <div class="message" id="messageBox"></div>
+
+      <div class="controls">
+        <button class="control-btn check-btn" id="checkBtn">Check Answer</button>
+        <button class="control-btn next-btn" id="nextBtn" disabled>Next Question</button>
+      </div>
+
+      <a href="index.html" class="back-link" id="backLink">Back to Home</a>
+    </div>
+  </div>
+
+  <script src="js/questions.js"></script>
+  <script>
+    let selectedLanguage = localStorage.getItem("selectedLanguage") || "en";
+    const selectedTest = localStorage.getItem("selectedTest") || "public_car";
+
+    const uiText = {
+      en: {
+        progress: "Question",
+        score: "Score",
+        check: "Check Answer",
+        next: "Next Question",
+        back: "Back to Home",
+        correct: "Correct answer!",
+        wrong: "Wrong answer!",
+        resultTitle: "Test Finished",
+        finalScore: "Your score",
+        restart: "Go Back Home",
+        noQuestions: "No questions found for this test."
+      },
+      fr: {
+        progress: "Question",
+        score: "Score",
+        check: "Vérifier la réponse",
+        next: "Question suivante",
+        back: "Retour à l'accueil",
+        correct: "Bonne réponse !",
+        wrong: "Mauvaise réponse !",
+        resultTitle: "Test terminé",
+        finalScore: "Votre score",
+        restart: "Retour à l'accueil",
+        noQuestions: "Aucune question trouvée pour ce test."
+      },
+      ar: {
+        progress: "السؤال",
+        score: "النتيجة",
+        check: "تحقق من الجواب",
+        next: "السؤال التالي",
+        back: "العودة إلى الصفحة الرئيسية",
+        correct: "إجابة صحيحة!",
+        wrong: "إجابة خاطئة!",
+        resultTitle: "انتهى الامتحان",
+        finalScore: "نتيجتك",
+        restart: "العودة إلى الرئيسية",
+        noQuestions: "لا توجد أسئلة لهذا الامتحان."
+      }
+    };
+
+    const switcher = document.getElementById("languageSwitcher");
+    const progressText = document.getElementById("progressText");
+    const scoreText = document.getElementById("scoreText");
+    const questionText = document.getElementById("questionText");
+    const answersContainer = document.getElementById("answersContainer");
+    const messageBox = document.getElementById("messageBox");
+    const checkBtn = document.getElementById("checkBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const backLink = document.getElementById("backLink");
+    const questionImage = document.getElementById("questionImage");
+    const app = document.getElementById("app");
+
+    function getQuestionText(questionObj, lang) {
+      if (!questionObj) return "";
+      return questionObj[lang] || questionObj.en || "";
+    }
+
+    function getOptions(optionsObj, lang) {
+      if (!optionsObj) return [];
+      return optionsObj[lang] || optionsObj.en || [];
+    }
+
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function pickRandomQuestions(sourceArray, count) {
+      return shuffleArray(sourceArray).slice(0, count);
+    }
+
+    function buildQuizQuestions() {
+      const signsQuestions = allQuestions.filter(q => q.category === "signs");
+      const safetyQuestions = allQuestions.filter(q => q.category === "safety");
+      const mainCategoryQuestions = allQuestions.filter(q => q.category === selectedTest);
+
+      if (selectedTest === "signs") {
+        return shuffleArray(pickRandomQuestions(signsQuestions, 30));
+      }
+
+      const mainPart = pickRandomQuestions(mainCategoryQuestions, 20);
+      const safetyPart = pickRandomQuestions(safetyQuestions, 5);
+      const signsPart = pickRandomQuestions(signsQuestions, 5);
+
+      return shuffleArray([...mainPart, ...safetyPart, ...signsPart]);
+    }
+
+    let questions = buildQuizQuestions();
+
+    if (!questions.length) {
+      const t = uiText[selectedLanguage];
+      app.innerHTML = `
+        <div class="result-box">
+          <h2 class="result-title">${t.noQuestions}</h2>
+          <button class="restart-btn" onclick="window.location.href='index.html'">${t.restart}</button>
+        </div>
+      `;
+      throw new Error("No questions found for selected test.");
+    }
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let selectedAnswerIndex = null;
+    let answerChecked = false;
+
+    switcher.value = selectedLanguage;
+
+    function updateTopInfo() {
+      const t = uiText[selectedLanguage];
+      progressText.textContent = `${t.progress} ${currentQuestionIndex + 1} / ${questions.length}`;
+      scoreText.textContent = `${t.score}: ${score}`;
+    }
+
+    function applyLanguageChange() {
+      const t = uiText[selectedLanguage];
+
+      checkBtn.textContent = t.check;
+      nextBtn.textContent = t.next;
+      backLink.textContent = t.back;
+
+      if (selectedLanguage === "ar") {
+        document.documentElement.lang = "ar";
+        document.documentElement.dir = "rtl";
+        questionText.style.textAlign = "right";
+        messageBox.style.textAlign = "right";
+      } else {
+        document.documentElement.lang = selectedLanguage;
+        document.documentElement.dir = "ltr";
+        questionText.style.textAlign = "left";
+        messageBox.style.textAlign = "left";
+      }
+
+      renderCurrentQuestion();
+    }
+
+    function renderCurrentQuestion() {
+      const t = uiText[selectedLanguage];
+      const currentQuestion = questions[currentQuestionIndex];
+
+      questionText.textContent = getQuestionText(currentQuestion.question, selectedLanguage);
+      answersContainer.innerHTML = "";
+
+      if (currentQuestion.type === "sign" && currentQuestion.image) {
+        questionImage.src = currentQuestion.image;
+        questionImage.style.display = "block";
+      } else {
+        questionImage.style.display = "none";
+        questionImage.src = "";
+      }
+
+      const currentOptions = getOptions(currentQuestion.options, selectedLanguage);
+
+      currentOptions.forEach((option, index) => {
+        const btn = document.createElement("button");
+        btn.className = "answer-btn";
+        btn.textContent = option;
+        btn.style.textAlign = selectedLanguage === "ar" ? "right" : "left";
+
+        if (!answerChecked) {
+          if (selectedAnswerIndex === index) {
+            btn.classList.add("selected");
+          }
+
+          btn.addEventListener("click", () => {
+            if (answerChecked) return;
+            selectedAnswerIndex = index;
+            renderCurrentQuestion();
+          });
+        } else {
+          btn.classList.add("disabled");
+
+          if (index === currentQuestion.correct) {
+            btn.classList.add("correct");
+          }
+
+          if (index === selectedAnswerIndex && index !== currentQuestion.correct) {
+            btn.classList.add("wrong");
+          }
+        }
+
+        answersContainer.appendChild(btn);
+      });
+
+      if (answerChecked) {
+        if (selectedAnswerIndex === currentQuestion.correct) {
+          messageBox.textContent = t.correct;
+          messageBox.style.color = "#16a34a";
+        } else {
+          messageBox.textContent = t.wrong;
+          messageBox.style.color = "#dc2626";
+        }
+      } else {
+        messageBox.textContent = "";
+      }
+
+      updateTopInfo();
+    }
+
+    function loadQuestion() {
+      selectedAnswerIndex = null;
+      answerChecked = false;
+      checkBtn.disabled = false;
+      nextBtn.disabled = true;
+      renderCurrentQuestion();
+    }
+
+    checkBtn.addEventListener("click", () => {
+      if (selectedAnswerIndex === null) return;
+
+      answerChecked = true;
+      checkBtn.disabled = true;
+      nextBtn.disabled = false;
+
+      if (selectedAnswerIndex === questions[currentQuestionIndex].correct) {
+        score++;
+      }
+
+      renderCurrentQuestion();
+    });
+
+    nextBtn.addEventListener("click", () => {
+      currentQuestionIndex++;
+
+      if (currentQuestionIndex >= questions.length) {
+        showResult();
+        return;
+      }
+
+      loadQuestion();
+    });
+
+    switcher.addEventListener("change", function () {
+      selectedLanguage = this.value;
+      localStorage.setItem("selectedLanguage", selectedLanguage);
+      applyLanguageChange();
+    });
+
+    function showResult() {
+      const t = uiText[selectedLanguage];
+      app.innerHTML = `
+        <div class="result-box">
+          <h2 class="result-title">${t.resultTitle}</h2>
+          <div class="result-score">${t.finalScore}: ${score} / ${questions.length}</div>
+          <button class="restart-btn" onclick="window.location.href='index.html'">${t.restart}</button>
+        </div>
+      `;
+    }
+
+    applyLanguageChange();
+  </script>
+</body>
+</html>
